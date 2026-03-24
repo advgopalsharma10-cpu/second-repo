@@ -1,24 +1,28 @@
-name: Deploy to AWS
+name: CI Test
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+      - name: Show files
+        run: ls -la
 
-      - name: Deploy
-        run: |
-          rsync -avz -e "ssh -i ~/.ssh/id_ed25519" ./app/ ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/var/www/html/
+      - name: Verify app folder
+        run: ls -la app
+
+      - name: Check index.html exists
+        run: test -f app/index.html
+
+      - name: Test message
+        run: echo "GitHub Actions is working"
+
