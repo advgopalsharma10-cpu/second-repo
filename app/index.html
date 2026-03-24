@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevOps Portal</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+    <h1>⚙️ DevOps Portal</h1>
+    <nav>
+        <a href="#">Home</a>
+        <a href="#">Pipelines</a>
+        <a href="#">Clusters</a>
+        <a href="#">Monitoring</a>
+    </nav>
+</header>
+
+<section class="hero">
+    <h2 class="fade">Automate Everything 🚀</h2>
+    <p class="fade">CI/CD • Kubernetes • Cloud • Automation</p>
+    <button onclick="start()">Launch Dashboard</button>
+</section>
+
+<section class="dashboard">
+    <div class="box">
+        <h3>CI/CD Status</h3>
+        <p id="cicd">Checking...</p>
+    </div>
+
+    <div class="box">
+        <h3>Kubernetes Pods</h3>
+        <p id="pods">Loading...</p>
+    </div>
+
+    <div class="box">
+        <h3>Server Health</h3>
+        <p id="health">Monitoring...</p>
+    </div>
+</section>
+
+<footer>
+    <p>© 2026 DevOps Advanced UI</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
