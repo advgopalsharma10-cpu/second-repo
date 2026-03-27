@@ -13,11 +13,11 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/awskey
+          chmod 600 ~/.ssh/awskey
           ssh-keyscan -p ${{ secrets.PORT }} ${{ secrets.HOST }} >> ~/.ssh/known_hosts
 
       - name: Create folder on AWS
         run: |
-          ssh -i ~/.ssh/id_ed25519 -p ${{ secrets.PORT }} ${{ secrets.USERNAME }}@${{ secrets.HOST }} "
+          ssh -i ~/.ssh/awskey -p ${{ secrets.PORT }} ${{ secrets.USERNAME }}@${{ secrets.HOST }} "
             mkdir -p ~/myproject"
