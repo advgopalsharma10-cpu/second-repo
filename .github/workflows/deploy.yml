@@ -1,25 +1,36 @@
-name: Deploy to AWS
+name: Create Files on Server
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+      - name: Connect to Server and Create Files
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
 
-      - name: Deploy
-        run: |
-          rsync -avz -e "ssh -i ~/.ssh/id_ed25519" ./app/ ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/var/www/html/
+          script: |
+            echo "Connected to server"
 
+            # Create directory
+            mkdir -p /var/www/html/myapp
+
+            # Create files
+            echo "Hello from GitHub Actions" > /var/www/html/myapp/index.html
+            echo "This is a sample file" > /var/www/html/myapp/info.txt
+
+            # List files
+            ls -la /var/www/html/myapp
