@@ -1,23 +1,28 @@
-name: Create Folder on AWS
+
+name: CI Test
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/awskey
-          chmod 600 ~/.ssh/awskey
-          ssh-keyscan -p ${{ secrets.PORT }} ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Create folder on AWS
-        run: |
-          ssh -i ~/.ssh/awskey -p ${{ secrets.PORT }} ${{ secrets.USERNAME }}@${{ secrets.HOST }} "
-            mkdir -p ~/myproject"
+      - name: Show files
+        run: ls -la
+
+      - name: Verify app folder
+        run: ls -la app
+
+      - name: Check index.html exists
+        run: test -f app/index.html
+
+      - name: Test message
+        run: echo "GitHub Actions is working"
