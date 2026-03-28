@@ -1,28 +1,10 @@
+- name: Setup SSH
+  run: |
+    mkdir -p ~/.ssh
+    printf "%s" "${{ secrets.SSH_KEY }}" > ~/.ssh/awskey
+    chmod 600 ~/.ssh/awskey
+    ssh-keyscan -p ${{ secrets.PORT }} ${{ secrets.HOST }} >> ~/.ssh/known_hosts
 
-name: CI Test
-
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Show files
-        run: ls -la
-
-      - name: Verify app folder
-        run: ls -la app
-
-      - name: Check index.html exists
-        run: test -f app/index.html
-
-      - name: Test message
-        run: echo "GitHub Actions is working"
+- name: Create folder on AWS
+  run: |
+    ssh -i ~/.ssh/awskey -p ${{ secrets.PORT }} ${{ secrets.USERNAME }}@${{ secrets.HOST }} "mkdir -p ~/myproject"
