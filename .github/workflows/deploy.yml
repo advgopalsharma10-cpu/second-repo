@@ -1,22 +1,10 @@
-name: Deploy
+- name: Setup SSH
+  run: |
+    mkdir -p ~/.ssh
+    echo "${{ secrets.SSH_KEY }}" > ~/.ssh/awskey
+    chmod 600 ~/.ssh/awskey
+    ssh-keyscan -p ${{ secrets.PORT }} ${{ secrets.HOST }} >> ~/.ssh/known_hosts
 
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          printf "%s" "${{ secrets.SSH_KEY }}" > ~/.ssh/awskey
-          chmod 600 ~/.ssh/awskey
-          ssh-keyscan -p ${{ secrets.PORT }} ${{ secrets.HOST }} >> ~/.ssh/known_hosts
-
-      - name: Create folder on AWS
-        run: |
-          ssh -i ~/.ssh/awskey -p ${{ secrets.PORT }} ${{ secrets.USERNAME }}@${{ secrets.HOST }} "mkdir -p ~/myproject"
+- name: Test SSH
+  run: |
+    ssh -i ~/.ssh/awskey -o StrictHostKeyChecking=no -p ${{ secrets.PORT }} ${{ secrets.USERNAME }}@${{ secrets.HOST }} "echo CONNECTED"
