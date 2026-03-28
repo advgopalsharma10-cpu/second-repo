@@ -1,10 +1,22 @@
-- name: Setup SSH
-  run: |
-    mkdir -p ~/.ssh
-    echo "${{ secrets.SSH_KEY }}" > ~/.ssh/awskey
-    chmod 600 ~/.ssh/awskey
-    ssh-keyscan -p ${{ secrets.PORT }} ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+name: Deploy
 
-- name: Test SSH
-  run: |
-    ssh -i ~/.ssh/awskey -o StrictHostKeyChecking=no -p ${{ secrets.PORT }} ${{ secrets.USERNAME }}@${{ secrets.HOST }} "echo CONNECTED"
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/awskey
+          chmod 600 ~/.ssh/awskey
+          ssh-keyscan -p ${{ secrets.PORT }} ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+
+      - name: Test SSH
+        run: |
+          ssh -i ~/.ssh/awskey -o StrictHostKeyChecking=no -p ${{ secrets.PORT }} ${{ secrets.USERNAME }}@${{ secrets.HOST }} "echo CONNECTED"
