@@ -1,9 +1,14 @@
-name: Deploy to EC2
+name: Deploy to EC2 - Create v1 & v2 folders
 
 on:
   push:
     branches:
       - main
+
+env:
+  SERVER_IP: "44.222.229.148"
+  SERVER_USER: "ubuntu"
+  BASE_PATH: "/var/www/html"
 
 jobs:
   deploy:
@@ -11,23 +16,55 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H 44.222.229.148 >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ env.SERVER_IP }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
-      - name: Create directory & fix permissions on server
+      - name: Create v1 and v2 folders with proper permissions
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@44.222.229.148 << 'EOF'
-            sudo mkdir -p /var/www/html/app
-            sudo chown -R ubuntu:ubuntu /var/www/html
-            sudo chmod -R 755 /var/www/html
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \( {{ env.SERVER_USER }}@ \){{ env.SERVER_IP }} << 'EOF'
+            
+            echo "=== Creating version folders v1 and v2 ==="
+            
+            # Create both folders
+            sudo mkdir -p ${{ env.BASE_PATH }}/v1
+            sudo mkdir -p ${{ env.BASE_PATH }}/v2
+            
+            # Set ownership to ubuntu user
+            sudo chown -R \( {{ env.SERVER_USER }}: \){{ env.SERVER_USER }} ${{ env.BASE_PATH }}
+            
+            # Set standard web permissions
+            sudo chmod -R 755 ${{ env.BASE_PATH }}
+            
+            echo "=== Folder creation completed ==="
+            echo "v1 path: ${{ env.BASE_PATH }}/v1"
+            echo "v2 path: ${{ env.BASE_PATH }}/v2"
+            
+            # Show folder structure
+            ls -la ${{ env.BASE_PATH }}
           EOF
 
-      - name: Deploy files to server
+      - name: Deploy files to v1 folder (optional - current version)
         run: |
-          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" ./ ubuntu@44.222.229.148:/var/www/html/app/
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" \
+            ./ \
+            \( {{ env.SERVER_USER }}@ \){{ env.SERVER_IP }}:${{ env.BASE_PATH }}/v1/
+
+      - name: Verify deployment
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \( {{ env.SERVER_USER }}@ \){{ env.SERVER_IP }} << 'EOF'
+            echo "=== Verification ==="
+            echo "Contents of v1:"
+            ls -la ${{ env.BASE_PATH }}/v1
+            echo ""
+            echo "Contents of v2 (currently empty):"
+            ls -la ${{ env.BASE_PATH }}/v2
+            echo ""
+            echo "Deployment completed at $(date)"
+          EOF
