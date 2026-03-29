@@ -5,11 +5,6 @@ on:
     branches:
       - main
 
-env:
-  SERVER_IP: "44.222.229.148"
-  SERVER_USER: "ubuntu"
-  BASE_PATH: "/var/www/html"
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -23,48 +18,37 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ env.SERVER_IP }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh-keyscan -H 44.222.229.148 >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Create v1 and v2 folders with proper permissions
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \( {{ env.SERVER_USER }}@ \){{ env.SERVER_IP }} << 'EOF'
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@44.222.229.148 << 'EOF'
+            set -e
             
-            echo "=== Creating version folders v1 and v2 ==="
+            echo "=== Creating v1 and v2 folders ==="
+            sudo mkdir -p /var/www/html/v1
+            sudo mkdir -p /var/www/html/v2
             
-            # Create both folders
-            sudo mkdir -p ${{ env.BASE_PATH }}/v1
-            sudo mkdir -p ${{ env.BASE_PATH }}/v2
+            echo "=== Setting ownership and permissions ==="
+            sudo chown -R ubuntu:ubuntu /var/www/html || true
+            sudo chmod -R 755 /var/www/html
             
-            # Set ownership to ubuntu user
-            sudo chown -R \( {{ env.SERVER_USER }}: \){{ env.SERVER_USER }} ${{ env.BASE_PATH }}
-            
-            # Set standard web permissions
-            sudo chmod -R 755 ${{ env.BASE_PATH }}
-            
-            echo "=== Folder creation completed ==="
-            echo "v1 path: ${{ env.BASE_PATH }}/v1"
-            echo "v2 path: ${{ env.BASE_PATH }}/v2"
-            
-            # Show folder structure
-            ls -la ${{ env.BASE_PATH }}
+            echo "=== Folders created successfully ==="
+            ls -la /var/www/html
           EOF
 
-      - name: Deploy files to v1 folder (optional - current version)
+      - name: Deploy files to v1 folder
         run: |
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" \
-            ./ \
-            \( {{ env.SERVER_USER }}@ \){{ env.SERVER_IP }}:${{ env.BASE_PATH }}/v1/
+            ./ ubuntu@44.222.229.148:/var/www/html/v1/
 
       - name: Verify deployment
+        if: always()
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \( {{ env.SERVER_USER }}@ \){{ env.SERVER_IP }} << 'EOF'
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@44.222.229.148 << 'EOF'
             echo "=== Verification ==="
-            echo "Contents of v1:"
-            ls -la ${{ env.BASE_PATH }}/v1
-            echo ""
-            echo "Contents of v2 (currently empty):"
-            ls -la ${{ env.BASE_PATH }}/v2
-            echo ""
-            echo "Deployment completed at $(date)"
+            echo "v1:" && ls -la /var/www/html/v1 2>/dev/null || echo "v1 not found"
+            echo "v2:" && ls -la /var/www/html/v2 2>/dev/null || echo "v2 not found"
+            echo "Done at $(date)"
           EOF
