@@ -1,4 +1,4 @@
-name: Deploy to EC2 - Create v1 & v2 folders
+name: Deploy to EC2
 
 on:
   push:
@@ -11,44 +11,21 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H 44.222.229.148 >> ~/.ssh/known_hosts 2>/dev/null || true
-
-      - name: Create v1 and v2 folders with proper permissions
+          ssh-keyscan -H 44.222.229.148 >> ~/.ssh/known_hosts
+      - name: Create directory & fix permissions on server
         run: |
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@44.222.229.148 << 'EOF'
-            set -e
-            
-            echo "=== Creating v1 and v2 folders ==="
-            sudo mkdir -p /var/www/html/v1
-            sudo mkdir -p /var/www/html/v2
-            
-            echo "=== Setting ownership and permissions ==="
-            sudo chown -R ubuntu:ubuntu /var/www/html || true
+            sudo mkdir -p /var/www/html/
+            sudo chown -R ubuntu:ubuntu /var/www/html
             sudo chmod -R 755 /var/www/html
-            
-            echo "=== Folders created successfully ==="
-            ls -la /var/www/html
           EOF
-
-      - name: Deploy files to v1 folder
+      - name: Deploy files to server
         run: |
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" \
-            ./ ubuntu@44.222.229.148:/var/www/html/v1/
-
-      - name: Verify deployment
-        if: always()
-        run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@44.222.229.148 << 'EOF'
-            echo "=== Verification ==="
-            echo "v1:" && ls -la /var/www/html/v1 2>/dev/null || echo "v1 not found"
-            echo "v2:" && ls -la /var/www/html/v2 2>/dev/null || echo "v2 not found"
-            echo "Done at $(date)"
-          EOF
+          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" ./ ubuntu@44.222.229.148:/var/www/html/
