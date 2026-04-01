@@ -1,4 +1,4 @@
- name: Setup Firewall on EC2
+name: Setup Firewall on EC2
 
 on:
   workflow_dispatch:
