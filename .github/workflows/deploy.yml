@@ -20,12 +20,11 @@ jobs:
 
       - name: Configure UFW Firewall
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@44.222.229.148 << 'EOF'
             sudo apt update
             sudo apt install -y ufw
 
             sudo ufw --force reset
-
             sudo ufw default deny incoming
             sudo ufw default allow outgoing
 
