@@ -1,4 +1,4 @@
-name: Setup Firewall on EC2
+ name: Setup Firewall on EC2
 
 on:
   workflow_dispatch:
@@ -12,11 +12,11 @@ jobs:
 
     steps:
       - name: Setup SSH
-        run: |
+         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H 44.222.229.148 >> ~/.ssh/known_hosts
 
       - name: Configure UFW Firewall
         run: |
