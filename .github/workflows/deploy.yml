@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Deploy Full Apache Service to EC2
 
 on:
   push:
@@ -19,13 +19,30 @@ jobs:
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H 44.222.229.148 >> ~/.ssh/known_hosts
-      - name: Create directory & fix permissions on server
+
+      - name: Install and Configure Apache on EC2
         run: |
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@44.222.229.148 << 'EOF'
-            sudo mkdir -p /var/www/html/
+            sudo apt update
+            sudo apt install -y apache2 rsync
+
+            sudo systemctl start apache2
+            sudo systemctl enable apache2
+
+            sudo mkdir -p /var/www/html
             sudo chown -R ubuntu:ubuntu /var/www/html
             sudo chmod -R 755 /var/www/html
           EOF
-      - name: Deploy files to server
+
+      - name: Deploy project files to Apache web root
         run: |
-          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" app/index.html ubuntu@44.222.229.148:/var/www/html/
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" \
+            ./ ubuntu@44.222.229.148:/var/www/html/
+
+      - name: Restart Apache
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@44.222.229.148 << 'EOF'
+            sudo systemctl restart apache2
+            sudo systemctl status apache2 --no-pager
+          EOF
