@@ -1,48 +1,38 @@
-name: Deploy Full Apache Service to EC2
+name: Setup Firewall on EC2
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
 
 jobs:
-  deploy:
+  firewall:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H 44.222.229.148 >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Install and Configure Apache on EC2
+      - name: Configure UFW Firewall
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@44.222.229.148 << 'EOF'
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             sudo apt update
-            sudo apt install -y apache2 rsync
+            sudo apt install -y ufw
 
-            sudo systemctl start apache2
-            sudo systemctl enable apache2
+            sudo ufw --force reset
 
-            sudo mkdir -p /var/www/html
-            sudo chown -R ubuntu:ubuntu /var/www/html
-            sudo chmod -R 755 /var/www/html
-          EOF
+            sudo ufw default deny incoming
+            sudo ufw default allow outgoing
 
-      - name: Deploy project files to Apache web root
-        run: |
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" \
-            ./ ubuntu@44.222.229.148:/var/www/html/
+            sudo ufw allow 22/tcp
+            sudo ufw allow 80/tcp
+            sudo ufw allow 443/tcp
 
-      - name: Restart Apache
-        run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@44.222.229.148 << 'EOF'
-            sudo systemctl restart apache2
-            sudo systemctl status apache2 --no-pager
+            sudo ufw --force enable
+            sudo ufw status verbose
           EOF
